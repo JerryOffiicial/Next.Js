@@ -5,8 +5,9 @@ type EventItem = {
   id: number;
   title: string;
   date: string;
+  done?: boolean
 }
-const Page = () => {
+const EventPage = () => {
 
 
 
@@ -43,6 +44,12 @@ const Page = () => {
             {events.map((event) => (
               <tr key={event.id} className='border-b border-gray-300'>
                 <td className='px-4 py-2'>{event.title} - {event.date}</td>
+                <td onClick={() => setEvents(events.map(e =>
+                  e.id === event.id ? { ...e, done: !e.done } : e
+                ))}
+
+                  className={`cursor-pointer px-2.5 py-1.5 rounded-2xl ${event.done ? 'bg-green-400' : 'bg-gray-200'}`}
+                >{event.done ? 'Done' : 'Pending'}</td>
                 <td
                   onClick={() =>
                     setEvents(events.filter(e => e.id !== event.id))
@@ -56,9 +63,10 @@ const Page = () => {
           </tbody>
         </table>
 
+        {events.length > 0 && <button onClick={() => setEvents([])} className='cursor-pointer rounded-2xl bg-red-400 px-2.5 py-1.5 text-center mt-5'>Clear All</button>}
       </div>
     </div>
   )
 }
 
-export default Page
+export default EventPage
