@@ -324,4 +324,139 @@ Browser shows page + Client Components hydrate
 
 ---
 
+# Next.js – Data Fetching & Rendering Notes
+
+This section focuses on **data fetching, caching, static, and dynamic rendering** in Next.js App Router.
+
+---
+
+## 1. Data Fetching in Server Components
+
+* Server Components can be **async**
+* Can fetch data directly with `fetch()` or from a database
+* Runs on the **server**, safe for secrets and server-side APIs
+
+```ts
+const res = await fetch('https://jsonplaceholder.typicode.com/users');
+const users = await res.json();
+```
+
+✅ No `useEffect` needed for server-side fetching
+
+---
+
+## 2. Rendering Types in Next.js
+
+| Rendering Type                            | Description                                                       | Next.js Example                                                   |
+| ----------------------------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------- |
+| **SSR (Server-Side Rendering)**           | Runs on every request, HTML is generated per request              | Default Server Component, `async` fetch with no caching overrides |
+| **SSG (Static Site Generation)**          | HTML generated **at build time**, same for all users              | `fetch(..., { cache: 'force-cache' })`                            |
+| **ISR (Incremental Static Regeneration)** | Static generation + background updates after `revalidate` seconds | `fetch(..., { next: { revalidate: 10 } })`                        |
+| **CSR (Client-Side Rendering)**           | HTML generated in browser, for interactive components             | `"use client"` + hooks + fetch in `useEffect`                     |
+
+---
+
+## 3. Static Site Generation (SSG)
+
+* Generated at **build time**
+* HTML served to all users until next build
+* Fastest first load and SEO-friendly
+
+```ts
+const res = await fetch('https://jsonplaceholder.typicode.com/posts', { cache: 'force-cache' })
+```
+
+✅ Best for blogs, landing pages, docs
+
+---
+
+## 4. Incremental Static Regeneration (ISR)
+
+* Starts as SSG, but can **update automatically after a set interval**
+* Use `{ next: { revalidate: X } }`
+* First request after X seconds triggers **background regeneration**
+* Users still see cached page until regeneration completes
+
+```ts
+const res = await fetch('https://jsonplaceholder.typicode.com/users', { next: { revalidate: 10 } })
+```
+
+✅ Best for product pages, stats, dashboards
+
+---
+
+## 5. SSR (Server-Side Rendering) with cache control
+
+* HTML generated **on every request**
+* Use `{ cache: 'no-store' }` to **force fresh SSR every time**
+
+```ts
+const res = await fetch('https://jsonplaceholder.typicode.com/users', { cache: 'no-store' })
+```
+
+✅ Good for auth pages, user-specific data
+
+---
+
+## 6. Client-Side Rendering (CSR)
+
+* HTML generated in **browser**, not on server
+* Requires `"use client"`
+* Can use hooks like `useState`, `useEffect`
+* Interactive UI and event handling happen on client
+
+```tsx
+"use client";
+import { useEffect, useState } from "react";
+
+export default function Users() {
+  const [users, setUsers] = useState([]);
+
+  useEffect(() => {
+    fetch('/api/users')
+      .then(res => res.json())
+      .then(setUsers);
+  }, []);
+
+  return <ul>{users.map(u => <li key={u.id}>{u.name}</li>)}</ul>;
+}
+```
+
+✅ Best for dashboards, forms, interactive components
+
+---
+
+## 7. Key Points / Rules
+
+1. **Server Components** = default → SSR by default
+2. **Client Components** = `"use client"` → CSR + interactivity
+3. **SSG** = `cache: 'force-cache'` → built at build time
+4. **ISR** = `next: { revalidate: X }` → static + revalidation
+5. **SSR always fresh** = `cache: 'no-store'`
+6. **Server Components can fetch secrets and DBs safely**
+7. **Client Components fetch in browser**, cannot access server-only secrets
+
+---
+
+## 8. Quick Visual Memory Trick
+
+```
+Server Component + fetch() 
+  ├─ cache: 'force-cache' → SSG
+  ├─ next: { revalidate: X } → ISR
+  ├─ cache: 'no-store' → SSR every request
+Client Component ("use client") + useEffect + fetch() → CSR
+```
+
+> SSG = frozen at build 🏗️
+> ISR = frozen but refreshes ⏰
+> SSR = fresh every request 🔄
+> CSR = dynamic in browser 💻
+
+---
+
+End of Data Fetching & Rendering Notes ✅
+
 End of notes ✅
+
+
