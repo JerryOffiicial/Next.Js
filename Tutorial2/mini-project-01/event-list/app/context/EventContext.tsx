@@ -1,5 +1,5 @@
 "use client"
-import React, { createContext, useEffect, useState } from "react"
+import React, { createContext, useEffect, useReducer, useState } from "react"
 
 export type EventItem = {
     id: number;
@@ -16,19 +16,51 @@ type EventContextType = {
     clearAll: () => void;
 }
 
+type Action =
+    | { type: "INIT"; payload: EventItem[] }
+    | { type: "ADD_EVENT"; payload: { title: string; date: string } }
+    | { type: "TOGGLE_EVENT"; payload: { id: number } }
+    | { type: "DELETE_EVENT"; payload: { id: number } }
+    | { type: "CLEAR_ALL" }
+
+const eventReducer = (state: EventItem[], action: Action): EventItem[] => {
+    switch (action.type) {
+        case "INIT":
+            return action.payload
+        case "ADD_EVENT":
+            return [
+                ...state,
+                { id: Date.now(), title: action.payload.title, date: action.payload.date }
+            ]
+        case "TOGGLE_EVENT":
+            return state.map((e) =>
+                e.id === action.payload.id ? { ...e, done: !e.done } : e
+            )
+        case "DELETE_EVENT":
+            return state.filter((e) => e.id !== action.payload.id);
+        case "CLEAR_ALL":
+            return [];
+        default:
+            return state;
+    }
+}
 export const EventContext = createContext<EventContextType>({} as EventContextType)
 
 export const EventProvider = ({ children }: { children: React.ReactNode }) => {
 
-    const [events, setEvents] = useState<EventItem[]>([]);
+    const [events, dispatch] = useReducer(eventReducer, []);
 
     //Load once on client
     useEffect(() => {
         const stored = localStorage.getItem("events");
         if (stored) {
-            setEvents(JSON.parse(stored));
+            dispatch({
+                type: "INIT",
+                payload: JSON.parse(stored)
+            })
         }
     }, []);
+
     //Save to LocalStorage
     useEffect(() => {
         localStorage.setItem("events", JSON.stringify(events))
@@ -37,22 +69,21 @@ export const EventProvider = ({ children }: { children: React.ReactNode }) => {
 
     //add
     const addEvent = (title: string, date: string) => {
-        setEvents((prev) => [...prev, { id: Date.now(), title, date, done: false }])
+        dispatch({ type: "ADD_EVENT", payload: { title, date } })
     }
 
     //toggle
     const toggleEvent = (id: number) => {
-        setEvents((prev) =>
-            prev.map((e) => (e.id === id ? { ...e, done: !e.done } : e)))
+        dispatch({ type: "TOGGLE_EVENT", payload: { id } })
     }
 
     //const delete
     const deleteEvent = (id: number) => {
-        setEvents((prev) => prev.filter((e) => e.id !== id))
+        dispatch({ type: "DELETE_EVENT", payload: { id } })
     }
 
     const clearAll = () => {
-        setEvents([]);
+        dispatch({ type: "CLEAR_ALL" })
     }
 
     return (
