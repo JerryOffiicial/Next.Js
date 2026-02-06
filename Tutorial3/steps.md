@@ -1,0 +1,1 @@
+npm i babel-plugin-react-compiler@latest -automatic React performance optimizer
